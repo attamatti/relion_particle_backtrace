@@ -40,14 +40,14 @@ def read_starfile(f):
 try:
     (labels,header,data) = read_starfile(sys.argv[1])
 except:
-    sys.exit('''USAGE: rln-parts-trace <rln data starfile>
+    sys.exit('''
+USAGE: rln-parts-trace <rln data starfile>
 
 %% Relion particle backtrace - Version {0}
 %% INSTRUCTIONS
-%% run the script on a relion particles file
 %% start a manual pick job, make sure to add "--pickname (backtrace)" in the additional arguments box
 %% manually pick a point on one micrograph and save the results so relion creates the directory structure
-%% copy all of the _backtrace.star files into the manual pick job's directory
+%% run the script on a relion particles file in the directory where the manualpick job stores the _bactrace.star files
 %% continue the manual pick job to see the reults'''.format(vers))
 
 
@@ -59,14 +59,23 @@ _rlnCoordinateY #2
 '''
 
 micrographs = {}
+sys.stdout.write('Backtracing particles')
+n=0
+count = 0
 for i in data:
-    print i[labels['_rlnMicrographName ']]
     if i[labels['_rlnMicrographName ']] not in micrographs:
         micrographs[i[labels['_rlnMicrographName ']]] = []
     micrographs[i[labels['_rlnMicrographName ']]].append((i[labels['_rlnCoordinateX ']],i[labels['_rlnCoordinateY ']]))
-        
+    count +=1
+    n+=1
+    if n%1000 == 0:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+sys.stdout.write(' {0} particles'.format(count))    
 #print micrographs
 
+n=0
+sys.stdout.write('\nWriting files')
 for i in micrographs:
     filename = i.split('/')[-1].split('.')[0]
     outfile = open('{0}_backtrace.star'.format(filename),'w')
@@ -74,6 +83,9 @@ for i in micrographs:
     for coordpair in micrographs[i]:
         outfile.write('{0}  {1}\n'.format(coordpair[0],coordpair[1]))
     outfile.close()
-
-
+    n+=1
+    if n%100 == 0:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+sys.stdout.write(' Done!') 
 
